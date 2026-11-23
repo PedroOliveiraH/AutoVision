@@ -35,3 +35,9 @@ __pycache__/
 # Banco gerado localmente
 *.db
 *.sqlite3
+
+# Fotografias utilizadas nos testes locais
+imagens/
+
+# Pesos dos modelos de IA
+*.pt
