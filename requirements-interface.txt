@@ -1,0 +1,6 @@
+# Permite testar a interface e o banco SEM baixar os modelos de IA.
+streamlit>=1.39,<2
+Pillow>=10,<13
+numpy>=1.26,<3
+opencv-python-headless>=4.9,<5
+pytest>=8,<10
