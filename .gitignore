@@ -24,3 +24,14 @@ Thumbs.db
 
 # Configurações locais do VS Code
 .vscode/
+
+*.pt
+
+# Ambiente virtual e cache
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Banco gerado localmente
+*.db
+*.sqlite3

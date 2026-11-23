@@ -43,3 +43,45 @@ def decide(results, minimum_score=0.55, minimum_margin=0.10):
     if first["score"] < minimum_score or margin < minimum_margin:
         return None, "Identificação inconclusiva (resultado abaixo dos limites escolhidos)."
     return first["slug"], "Correspondência sugerida pelo modelo (não verificada)."
+
+
+# Exemplos adicionais para a comparação aberta: não constituem um catálogo
+# exaustivo de veículos desconhecidos. NÃO garantem rejeição universal.
+DISTRACTOR_LABELS = {
+    "fora-lamborghini": "a Lamborghini Veneno angular Italian exotic supercar",
+    "fora-gol": "a modern Volkswagen Gol compact Brazilian hatchback car",
+    "fora-onix": "a modern Chevrolet Onix hatchback passenger car",
+    "fora-corolla": "a Toyota Corolla modern sedan passenger car",
+    "fora-suv": "a modern sports utility vehicle SUV car",
+    "fora-picape": "a pickup truck with an open cargo bed",
+    "fora-esportivo": "a modern angular supercar different from a Porsche 911",
+    "fora-outro": "another brand or model of everyday passenger car",
+}
+
+
+def classify_with_alternatives(image):
+    """Classifica com cinco modelos E candidatos de contraste adicionais.
+
+    As pontuações mudam porque o conjunto de rótulos é diferente da Etapa 1.
+    Não são probabilidades calibradas nem uma solução completa de open-set.
+    """
+    model = _get_classifier()
+    descriptions = {**CANDIDATES, **DISTRACTOR_LABELS}
+    labels = list(descriptions.values())
+    scores = model(image, candidate_labels=labels,
+                   hypothesis_template="This is a photo of {}.")
+    reverse = {v: k for k, v in descriptions.items()}
+    return [{"slug": reverse[s["label"]], "score": float(s["score"])} for s in scores]
+
+
+def decide_with_alternatives(results, minimum_score=0.55, minimum_margin=0.10):
+    """Decisão conservadora baseada na lista ampliada de descrições."""
+    if not results:
+        return None, "Análise inconclusiva: nenhum resultado."
+    first = results[0]
+    if first["slug"] not in CANDIDATES:
+        return None, "Há um automóvel, mas ele pode não pertencer aos cinco modelos cadastrados."
+    margin = first["score"] - (results[1]["score"] if len(results) > 1 else 0.0)
+    if first["score"] < minimum_score or margin < minimum_margin:
+        return None, "Modelo inconclusivo: similaridade insuficiente ou categorias muito próximas."
+    return first["slug"], "Sugestão de modelo — precisa de validação com fotos independentes."
