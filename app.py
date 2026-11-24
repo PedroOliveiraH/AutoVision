@@ -20,7 +20,7 @@ from src.visualization import annotate, annotate_detections
 st.set_page_config(page_title="AutoVision", page_icon="🚘", layout="wide")
 init_db()
 st.title("🚘 AutoVision")
-st.caption("Projeto de Computação Gráfica — detecção e reconhecimento experimental de cinco modelos")
+st.caption("Visão computacional aplicada a automóveis • YOLO + CLIP + catálogo técnico")
 
 with st.sidebar:
     pagina = st.radio("Menu", ["Analisar imagem", "Catálogo", "Sobre o projeto"])
@@ -65,7 +65,8 @@ elif pagina == "Sobre o projeto":
                "de presença de automóvel. A acurácia deve ser medida em imagens independentes.")
 
 else:
-    st.header("Reconhecer por fotografia")
+    st.header("Analisar uma fotografia")
+    st.caption("1. Envie uma imagem  •  2. Selecione o veículo  •  3. Consulte o resultado e a ficha técnica")
     tipo = st.radio("Escolha a origem", ["Enviar imagem", "Tirar foto"], horizontal=True)
     upload = (st.file_uploader("Imagem JPG, PNG ou WEBP (máx. 12 MB)", type=["jpg", "jpeg", "png", "webp"])
               if tipo == "Enviar imagem" else st.camera_input("Tire uma foto"))
@@ -209,6 +210,8 @@ else:
         st.info("Escolha o carro e clique em 'Analisar modelo selecionado'.")
         st.stop()
 
+    # A inferência e as decisões permanecem iguais às da versão validada.
+    # As mudanças abaixo apenas reorganizam a apresentação dos resultados.
     st.markdown("### Resultado da análise")
     vehicle_crop = roi.crop(saved["crop_box"])
     results = saved["results"]
@@ -219,53 +222,96 @@ else:
         slug, message = apply_porsche_generation_gate(
             slug, message, saved.get("porsche_generation_scores")
         )
-    total = detection["time"] + saved["classification_time"]
-    st.write(f"**Tempo YOLO:** {detection['time']:.2f} s · "
-             f"**Tempo CLIP:** {saved['classification_time']:.2f} s · "
-             f"**Soma:** {total:.2f} s")
-    if saved["manual"]:
-        st.warning("**Modo manual:** o resultado não foi precedido por detecção positiva do YOLO.")
-    else:
-        st.caption(f"Veículo selecionado: nº {selected + 1} — "
-                   f"confiança de detecção YOLO: {cars[selected]['confidence']:.1%}.")
-    st.image(vehicle_crop, caption="Recorte efetivamente enviado ao CLIP", use_container_width=True)
 
-    if slug:
-        vehicle = get_vehicle(slug)
-        if vehicle:
-            name = f"{vehicle['marca']} {vehicle['modelo']} {vehicle['versao']}"
-            st.success(f"Modelo sugerido: {name}")
-            st.write(f"**Tipo:** {vehicle['tipo']}")
-            st.write(f"**Período:** {vehicle['periodo']}")
-            st.write(f"**Motor:** {vehicle['motorizacao']}")
-            st.write(f"**Combustível:** {vehicle['combustivel']}")
-            st.write(f"**Carroceria:** {vehicle['carroceria']}")
-            st.write(f"**Potência:** {vehicle['potencia']}")
-            st.write(f"**Transmissão:** {vehicle['transmissao']}")
-            st.write(f"**Tração:** {vehicle['tracao']}")
-            st.write(f"**Descrição:** {vehicle['observacoes']}")
-            st.caption("Ficha histórica de referência; a fotografia não confirma ano, motorização ou versão.")
-            with st.expander("Fontes da ficha técnica"):
-                for fonte in get_vehicle_sources(vehicle['slug']):
-                    st.markdown(f"[Fonte: {fonte['titulo']}]({fonte['url']})")
-            st.info(message)
-            if slug == "porsche-911-gt3-rs-2010":
-                st.caption("O CLIP não verifica o ano 2010 nem distingue com garantia "
-                           "a geração 997.2 de outras gerações do 911 GT3 RS. "
-                           "A ficha técnica é referente ao modelo cadastrado.")
+    vehicle = get_vehicle(slug) if slug else None
+    total = detection["time"] + saved["classification_time"]
+
+    # A mensagem principal vem antes dos detalhes para facilitar a leitura.
+    if vehicle:
+        name = f"{vehicle['marca']} {vehicle['modelo']} {vehicle['versao']}"
+        st.success(f"Modelo sugerido: {name}")
+    elif slug:
+        st.warning("A classificação sugeriu um veículo, mas sua ficha não está disponível no catálogo.")
     else:
         st.warning(message)
+
+    if saved["manual"]:
+        st.caption("Modo manual: o recorte foi classificado sem confirmação de detecção pelo YOLO.")
+    else:
+        st.caption(
+            f"Veículo selecionado: nº {selected + 1} · "
+            f"Confiança YOLO para a categoria 'carro': {cars[selected]['confidence']:.1%}. "
+            "Esta não é a confiança na marca ou no modelo."
+        )
+
+    # Foto e resumo ficam próximos; a ficha extensa aparece somente sob demanda.
+    col_imagem, col_resumo = st.columns([1.5, 1], gap="large")
+    with col_imagem:
+        st.image(vehicle_crop, caption="Recorte enviado ao CLIP", use_container_width=True)
+    with col_resumo:
+        with st.container(border=True):
+            st.markdown("#### Visão geral")
+            if vehicle:
+                st.write(f"**Modelo:** {name}")
+                st.write(f"**Tipo:** {vehicle['tipo']}")
+                st.write(f"**Período de referência:** {vehicle['periodo']}")
+                st.write(f"**Motorização de referência:** {vehicle['motorizacao']}")
+                st.caption("A foto não comprova ano, versão ou motor exatos.")
+            else:
+                st.write("**Identificação:** inconclusiva")
+                st.write("Nenhuma ficha técnica foi atribuída automaticamente.")
+                st.caption("O sistema evita apresentar como certo um modelo não confirmado.")
+
+    st.markdown("#### Desempenho da análise")
+    m_yolo, m_clip, m_total = st.columns(3)
+    m_yolo.metric("YOLO (detecção)", f"{detection['time']:.2f} s")
+    m_clip.metric("CLIP (classificação)", f"{saved['classification_time']:.2f} s")
+    m_total.metric("Tempo somado", f"{total:.2f} s")
+    st.caption("Tempos medidos nesta execução, sem representar desempenho médio do sistema.")
+
+    if vehicle:
+        with st.expander("📋 Consultar ficha técnica completa e fontes"):
+            st.markdown(f"**Tipo:** {vehicle['tipo']}")
+            st.markdown(f"**Período:** {vehicle['periodo']}")
+            st.markdown(f"**Motorização:** {vehicle['motorizacao']}")
+            st.markdown(f"**Combustível:** {vehicle['combustivel']}")
+            st.markdown(f"**Carroceria:** {vehicle['carroceria']}")
+            st.markdown(f"**Potência:** {vehicle['potencia']}")
+            st.markdown(f"**Transmissão:** {vehicle['transmissao']}")
+            st.markdown(f"**Tração:** {vehicle['tracao']}")
+            st.markdown(f"**Observações:** {vehicle['observacoes']}")
+            st.caption(
+                "Ficha histórica de referência. A fotografia não confirma ano, "
+                "motorização ou versão do exemplar."
+            )
+            fontes = get_vehicle_sources(vehicle['slug'])
+            if fontes:
+                st.markdown("**Fontes consultadas:**")
+                for fonte in fontes:
+                    st.markdown(f"[Fonte: {fonte['titulo']}]({fonte['url']})")
+            else:
+                st.caption("Nenhuma fonte está vinculada a esta ficha no banco de dados.")
+
+        st.info(message)
+        if slug == "porsche-911-gt3-rs-2010":
+            st.caption(
+                "O CLIP não verifica o ano 2010 nem distingue com garantia a geração "
+                "997.2 de outras gerações do 911 GT3 RS. A ficha técnica é referente "
+                "ao modelo cadastrado."
+            )
 
     generation_scores = saved.get("porsche_generation_scores")
     if generation_scores is not None:
         with st.expander("Diagnóstico experimental: gerações Porsche 997 e 991"):
-            st.write(f"Compatibilidade relativa com geração 997: "
-                     f"{generation_scores['997']:.1%}")
-            st.write(f"Compatibilidade relativa com geração 991: "
-                     f"{generation_scores['991']:.1%}")
-            st.caption("Os dois valores são relativos às descrições usadas, "
-                       "não são probabilidades nem comprovam ano ou geração.")
+            a, b = st.columns(2)
+            a.metric("Compatibilidade relativa: 997", f"{generation_scores['997']:.1%}")
+            b.metric("Compatibilidade relativa: 991", f"{generation_scores['991']:.1%}")
+            st.caption(
+                "Os valores comparam descrições textuais. Não representam probabilidades "
+                "calibradas nem comprovam ano ou geração."
+            )
 
+    st.markdown("#### Cor aparente")
     with st.expander("Opcional: melhorar a estimativa de cor com uma amostra da pintura"):
         st.caption("Escolha uma área pequena que contenha somente a pintura: porta, teto ou capô. "
                    "Evite vidros, pneus, sombras, adesivos e fundo.")
@@ -290,12 +336,18 @@ else:
         st.caption("A cor não é obtida por segmentação automática da carroceria; "
                    "mesmo uma amostra manual pode sofrer influência da iluminação.")
 
-    st.caption("Pontuações relativas CLIP entre cinco modelos e descrições de contraste — "
-               "NÃO representam probabilidade calibrada de acerto.")
-    for item in results:
-        if item["slug"] in CANDIDATES:
-            car = get_vehicle(item["slug"])
-            desc = f"{car['marca']} {car['modelo']} {car['versao']}" if car else item["slug"]
-        else:
-            desc = "Contraste (fora do catálogo): " + DISTRACTOR_LABELS[item["slug"]]
-        st.write(f"{desc}: {item['score']:.1%}")
+    # Resultados completos continuam disponíveis, mas sem dominar a tela principal.
+    with st.expander("🔎 Ver pontuações CLIP e categorias de contraste"):
+        st.caption(
+            "Pontuações relativas entre cinco modelos e descrições de contraste. "
+            "Não representam probabilidade calibrada de acerto."
+        )
+        linhas = []
+        for item in results:
+            if item["slug"] in CANDIDATES:
+                car = get_vehicle(item["slug"])
+                desc = f"{car['marca']} {car['modelo']} {car['versao']}" if car else item["slug"]
+            else:
+                desc = "Contraste (fora do catálogo): " + DISTRACTOR_LABELS[item["slug"]]
+            linhas.append({"Descrição comparada": desc, "Pontuação relativa": f"{item['score']:.1%}"})
+        st.dataframe(linhas, hide_index=True, use_container_width=True)

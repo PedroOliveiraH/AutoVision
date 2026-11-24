@@ -1,0 +1,7 @@
+id,descricao,hipotese_visual,foi_detectado_yolo,score_997_2_relativo,score_991_relativo,decisao_final,tempo_total_s,observacoes
+P01,"Laranja traseira lateral","997.2 compatível",,,,,,
+P02,"Vermelho/laranja frente","991 provável",,,,,,
+P03,"Branco rodas vermelhas","997.2 compatível",,,,,,
+P04,"Amarelo-esverdeado frente","991 provável",,,,,,
+P05,"Azul traseira","versão incerta",,,,,,
+P06,"Branco rodas douradas","997.2 compatível",,,,,,
