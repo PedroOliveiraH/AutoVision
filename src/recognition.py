@@ -56,7 +56,15 @@ DISTRACTOR_LABELS = {
     "fora-picape": "a pickup truck with an open cargo bed",
     "fora-esportivo": "a modern angular supercar different from a Porsche 911",
     "fora-outro": "another brand or model of everyday passenger car",
+    "fora-new-beetle": "a Volkswagen New Beetle from the 2000s with modern front engine and rounded body",
+    "fora-beetle-a5": "a Volkswagen Beetle A5 from 2012 to 2019, redesigned modern compact coupe",
 }
+
+# A descrição de Porsche 991 adicionada na Etapa 3 foi retirada do ranking.
+# Era visualmente muito semelhante à classe Porsche 997.2 do catálogo e
+# provocou regressões nos exemplos de desenvolvimento. Isso NÃO significa
+# que o CLIP consiga diferenciar automaticamente a geração 991 da 997.2.
+
 
 
 def classify_with_alternatives(image):
@@ -74,14 +82,29 @@ def classify_with_alternatives(image):
     return [{"slug": reverse[s["label"]], "score": float(s["score"])} for s in scores]
 
 
-def decide_with_alternatives(results, minimum_score=0.55, minimum_margin=0.10):
-    """Decisão conservadora baseada na lista ampliada de descrições."""
+def decide_with_alternatives(results, minimum_score=0.55, minimum_margin=0.10,
+                             *, manual_mode=False):
+    """Decide sem alegar detecção automática quando o modo é manual.
+
+    A retirada do contraste Porsche 991 evita uma competição específica que
+    apareceu na Etapa 3; isso não valida a geração/ano do Porsche sugerido.
+    """
     if not results:
-        return None, "Análise inconclusiva: nenhum resultado."
+        return None, "Análise inconclusiva: nenhum resultado de classificação."
     first = results[0]
     if first["slug"] not in CANDIDATES:
-        return None, "Há um automóvel, mas ele pode não pertencer aos cinco modelos cadastrados."
+        if manual_mode:
+            return None, ("Nenhuma correspondência segura com os cinco modelos cadastrados. "
+                          "No modo manual, não foi verificado se existe um automóvel na imagem.")
+        return None, ("O YOLO detectou uma região compatível com automóvel, mas o CLIP "
+                      "não encontrou correspondência segura com os cinco modelos cadastrados.")
     margin = first["score"] - (results[1]["score"] if len(results) > 1 else 0.0)
     if first["score"] < minimum_score or margin < minimum_margin:
-        return None, "Modelo inconclusivo: similaridade insuficiente ou categorias muito próximas."
+        if manual_mode:
+            return None, ("Classificação inconclusiva: pontuação ou margem insuficiente. "
+                          "O modo manual não confirma a presença de automóvel.")
+        return None, "Modelo inconclusivo: pontuação insuficiente ou categorias muito próximas."
+    if manual_mode:
+        return first["slug"], ("Sugestão visual do CLIP. A presença de automóvel não foi "
+                               "confirmada pelo YOLO neste modo.")
     return first["slug"], "Sugestão de modelo — precisa de validação com fotos independentes."

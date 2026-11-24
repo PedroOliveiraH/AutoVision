@@ -1,119 +1,75 @@
-# AutoVision — reconhecimento visual experimental de cinco veículos
+# AutoVision — Reconhecimento experimental de cinco modelos de veículos
 
-Projeto final acadêmico de Computação Gráfica (50 pontos, informado pela equipe).
+Projeto final acadêmico de Computação Gráfica. A equipe informou o valor da atividade como **50 pontos**.
 
-## Estado atual
+## Estado atual — Etapa 3
 
-Este é um **protótipo inicial, ainda não validado com fotografias**.
-A interface, o banco SQLite e a classificação zero-shot com CLIP estão implementados,
-mas a acurácia real ainda precisa ser testada. Não há detecção automática YOLO,
-nem confirmação do ano exato ou da motorização por fotografia.
+Protótipo em Python + Streamlit com detecção genérica de carro via **YOLO11 nano**, classificação **CLIP zero-shot**, catálogo de cinco veículos no **SQLite** e interface de visualização. O desenvolvimento já teve testes exploratórios realizados no computador da equipe; **não há estimativa validada da acurácia geral**.
 
-## Os cinco veículos
+### Escopo do catálogo
 
-1. Fiat Uno quadrado (primeira geração)
-2. Volkswagen Fusca clássico
-3. Chevrolet Opala SS (ano/carroceria ainda a definir)
-4. Porsche 911 GT3 RS 2010 (997.2)
-5. Ford Mustang 1964½ (ano/modelo 1965)
+1. Fiat Uno quadrado (primeira geração / família Mille da carroceria original)
+2. Volkswagen Fusca clássico (Type 1; não New Beetle/A5)
+3. Chevrolet Opala SS (motor e ano dependem da versão)
+4. Porsche 911 GT3 RS 2010 (997.2; não qualquer 911 GT3 RS de outros anos)
+5. Ford Mustang 1964½ (primeira série do ano/modelo 1965)
 
-## Requisitos
+## Execução no Windows
 
-- Python **3.11** recomendado
-- Computador com internet no primeiro uso de IA, para baixar o modelo CLIP
-- Aproximadamente 1 GB ou mais de espaço disponível para dependências e pesos (varia por plataforma)
-- Git para registrar contribuições
-
-## Instalação no Windows (PowerShell)
-
-Abra o PowerShell na pasta que contém `app.py`:
+A equipe está usando **Python 3.13.16**, VS Code e `.venv`, e já instalou as dependências essenciais. Para preparar uma instalação nova:
 
 ```powershell
-py -3.11 -m venv .venv
+py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pytest -q
 python -m streamlit run app.py
 ```
 
-Caso o comando `py -3.11` não esteja disponível, confira `py --list` e a instalação do Python 3.11.
-Se o PowerShell impedir a ativação, rode os executáveis diretamente:
+A instalação precisa de Internet para baixar as dependências e, no primeiro reconhecimento, os pesos dos modelos YOLO e CLIP. A aplicação pode usar CPU e tende a demorar mais no primeiro carregamento.
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m streamlit run app.py
-```
+## Como analisar uma fotografia
 
-### Apenas testar interface e banco, sem baixar bibliotecas pesadas de IA
+1. Em **Analisar imagem**, envie uma fotografia ou utilize a câmera.
+2. Opcionalmente, ajuste a **região de interesse** por coordenadas percentuais para restringir o cenário.
+3. Clique em **Detectar veículos na imagem**.
+4. Se houver várias caixas, selecione o automóvel desejado na lista. As caixas aparecem numeradas na imagem.
+5. Clique em **Analisar modelo selecionado**. A classificação trabalha com o recorte escolhido.
+6. Se o YOLO falhar, marque a opção de **classificação manual sem YOLO**, confirme que o recorte contém o veículo e execute o CLIP. A detecção não foi confirmada nesse modo.
+7. Opcionalmente, indique uma pequena **região pintada da carroceria** para a estimativa HSV de cor; evite pneus, vidros e fundo.
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-interface.txt
-.\.venv\Scripts\python.exe -m streamlit run app.py
-```
+**Avisos:** os rótulos do CLIP são aproximações por similaridade entre descrições, não probabilidades de acerto. O sistema não identifica com garantia ano de fabricação, versão, placa ou VIN. Pode confundir carros de gerações parecidas, miniaturas e veículos não cadastrados. Os dados `A definir` continuam pendentes no banco.
 
-Nesse modo, as páginas do catálogo funcionam, mas ao clicar em **Analisar veículo** a classificação informará que falta instalar o pacote completo.
+## Pipeline de visão e computação gráfica
 
-## Testes unitários
+- **Entrada:** imagens JPG, PNG, WEBP ou câmera; orientação EXIF e limite de tamanho.
+- **Pré-processamento:** redimensionamento proporcional; suavização Gaussiana e conversão RGB→HSV na análise de cor; normalização própria do processador CLIP na classificação.
+- **Detecção:** YOLO11 nano, classe COCO `car`, caixas e confiança de detecção separadas do modelo.
+- **Seleção:** todas as detecções relevantes exibidas, seleção pelo usuário; alternativa manual declarada.
+- **Classificação:** CLIP compara os cinco modelos do catálogo e contrastes como outros veículos, New Beetle e Beetle A5. A comparação específica com o Porsche 991 foi suspensa após uma regressão observada em testes; a geração exata não é garantida.
+- **Representação gráfica:** coordenadas percentuais e absolutas, transformação ROI→imagem, caixas sobrepostas, rótulos, transparência e comparação visual.
+- **Catálogo:** SQLite com cinco registros e metadados de fotografias (sem usar placa ou identificação pessoal).
+- **Avaliação:** testes unitários sem baixar pesos; testes reais e métricas a registrar com imagens independentes.
 
-```powershell
-python -m pytest -q
-```
-
-Eles testam banco, pré-processamento, regras básicas e a estrutura, **não** demonstram acurácia da IA.
-
-## Como usar
-
-1. Na aba `Catálogo`, veja os cinco registros.
-2. Em `Analisar imagem`, envie JPG/PNG/WEBP ou tire uma foto.
-3. Se desejar, recorte uma região manual por porcentagens (não é detecção automática).
-4. Ajuste na lateral a pontuação mínima e a diferença entre as primeiras classes.
-5. Clique em `Analisar veículo` para carregar o CLIP e produzir uma sugestão.
-6. Confira a pontuação relativa, ficha do SQLite e estimativa exploratória de cor.
-
-**Atenção:** o classificador CLIP compara apenas cinco descrições e pode identificar
-erroneamente carros de outras classes; os limiares são heurísticos e não
-probabilidades de acerto. A cor estimada pode refletir o fundo e outros objetos.
-
-## Pipeline e conceitos gráficos
-
-- Aquisição: arquivo enviado ou câmera pelo navegador.
-- Preparação: leitura validada, orientação EXIF, conversão RGB e redimensionamento proporcional com OpenCV.
-- Pré-processamento: suavização Gaussiana e espaço HSV para cor; processador CLIP aplica suas normalizações internas para classificação.
-- Visão: CLIP zero-shot entre cinco descrições, sem treinamento local.
-- Representação gráfica: região de interesse selecionada manualmente, conversão de coordenadas percentuais para pixels, retângulo, camada semitransparente, rótulo e imagens lado a lado.
-- Interação: origem da imagem, região de interesse, limite de pontuação e margem entre classes.
-- Avaliação: testes unitários incluídos; medir desempenho real conforme docs/PLANO_TESTES.md.
-
-## Estrutura de pastas
+## Estrutura de arquivos
 
 ```text
-app.py                  # Interface Streamlit
-src/database.py         # SQLite com 5 registros e tabela de imagens
-src/preprocessing.py    # Validação, redimensionamento, ROI, cor
-src/recognition.py      # CLIP zero-shot, limiares experimentais
-src/visualization.py    # Desenho e composição gráfica
-data/                   # Banco gerado automaticamente (fora do Git)
-data_samples/           # Amostras/manifesto com autoria e licenças
-assets/                 # Recursos da interface
-tests/                  # Testes locais sem pesos de IA
-docs/                   # Fontes, testes e declaração de uso de IA
-requirements.txt        # Dependências completas
-requirements-interface.txt # Instalação leve
-.gitignore              # Exclui dados transitórios e ambiente
+app.py                     # Interface e controle de seleção
+src/database.py            # Catálogo SQLite
+src/preprocessing.py       # Entrada, recortes e cor HSV
+src/recognition.py         # CLIP e contrastes
+src/vehicle_detection.py   # YOLO e lista de caixas
+src/visualization.py       # Caixas, legendas e camadas
+requirements.txt           # Bibliotecas completas, incluindo ultralytics
+tests/                    # Testes locais sem modelos de IA
+data/                     # SQLite gerado localmente (não enviar ao Git)
+data_samples/             # Manifesto de fotografias
+INSTRUCOES_ETAPA3.md       # Guia seguro de instalação da atualização
+docs/ETAPA3_PLANO_TESTE.md # Casos de teste e métricas
 ```
 
-## Organização no GitHub
+## Organização e entrega
 
-Cada integrante deve fazer alterações próprias identificáveis com commits e compreender
-as partes centrais do código. Registrar fontes de fotos, dados técnicos, modelo CLIP,
-licenças e uso de IA. Não inserir senhas nem chaves de API no repositório.
+O histórico do GitHub deve preservar commits e contribuições individuais. Registre fonte e licença das imagens e dados técnicos, limitações, resultados de falhas e uso de modelos de IA. Não envie `.venv`, pesos `*.pt`, banco SQLite local nem segredos.
 
-## Próximos passos
-
-1. Executar o programa no computador da equipe.
-2. Reunir fotos licenciadas e registrar em `data_samples/manifesto.csv`.
-3. Testar o CLIP em fotos de todos os cinco modelos e em carros desconhecidos.
-4. Ajustar recortes/prompt ou trocar de método se a acurácia for ruim.
-5. Completar ano e versão do Opala SS, Uno e Fusca no catálogo.
-6. Medir acurácia, rejeição de desconhecidos e latência; produzir apresentação.
+Consulte `INSTRUCOES_ETAPA3.md` para aplicar a atualização na cópia já instalada e `docs/ETAPA3_PLANO_TESTE.md` para validar as novas funcionalidades.

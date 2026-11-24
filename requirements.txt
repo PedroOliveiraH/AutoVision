@@ -1,4 +1,4 @@
-# Recomendação: Python 3.11
+# Equipe executou a aplicação no Python 3.13.16 no Windows (CPU).
 streamlit>=1.39,<2
 Pillow>=10,<13
 numpy>=1.26,<3
@@ -6,3 +6,4 @@ opencv-python-headless>=4.9,<5
 transformers>=4.41,<5
 torch>=2.2,<3
 pytest>=8,<10
+ultralytics>=8.3,<9
