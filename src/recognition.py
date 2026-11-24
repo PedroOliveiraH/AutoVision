@@ -58,13 +58,100 @@ DISTRACTOR_LABELS = {
     "fora-outro": "another brand or model of everyday passenger car",
     "fora-new-beetle": "a Volkswagen New Beetle from the 2000s with modern front engine and rounded body",
     "fora-beetle-a5": "a Volkswagen Beetle A5 from 2012 to 2019, redesigned modern compact coupe",
+    # Contrastes para sedas esportivos modernos. O Lancer visto por tras foi
+    # confundido com o Porsche 911 por compartilhar um aerofolio grande.
+    # Sao rotulos NEGATIVOS, nao novos veiculos no catalogo SQLite.
+    "fora-lancer-evo-x": "a Mitsubishi Lancer Evolution X four door Japanese performance sedan with a large rear wing",
+    "fora-seda-esportivo": "a modern modified four door sports sedan with a large rear spoiler",
 }
 
 # A descrição de Porsche 991 adicionada na Etapa 3 foi retirada do ranking.
 # Era visualmente muito semelhante à classe Porsche 997.2 do catálogo e
 # provocou regressões nos exemplos de desenvolvimento. Isso NÃO significa
 # que o CLIP consiga diferenciar automaticamente a geração 991 da 997.2.
+# A adicao de contrastes de Lancer/seda esportivo tambem altera o ranking e
+# precisa ser validada com imagens independentes de Porsche e Mitsubishi.
 
+
+
+# Verificação SECUNDÁRIA somente para candidatos Porsche GT3 RS.
+# Não adicionar a geração 991 aos contrastes gerais: isso fez o 997.2
+# perder para a classe concorrente nos testes da Etapa 3.
+PORSCHE_SLUG = "porsche-911-gt3-rs-2010"
+PORSCHE_GENERATION_DESCRIPTIONS = {
+    "997": (
+        "a 2010 Porsche 911 GT3 RS 997.2 older generation racing coupe with round headlights and a rear wing",
+        "an older Porsche 911 GT3 RS from the 997 generation with smooth rear fenders and a large fixed wing",
+    ),
+    "991": (
+        "a 2015 Porsche 911 GT3 RS 991.1 newer generation sports coupe with large side air intakes behind the doors",
+        "a newer Porsche 911 GT3 RS from the 991 generation with front fender vents and broad aerodynamic air scoops",
+    ),
+}
+
+
+def classify_porsche_generation(image):
+    """Comparação extra 997 × 991, SEM alterar o ranking geral do CLIP.
+
+    Retorna proporções RELATIVAS entre quatro descrições, não uma
+    probabilidade calibrada de a foto ser de determinada geração.
+    """
+    descriptions = {
+        label: generation
+        for generation, labels in PORSCHE_GENERATION_DESCRIPTIONS.items()
+        for label in labels
+    }
+    predictions = _get_classifier()(
+        image, candidate_labels=list(descriptions),
+        hypothesis_template="This is a photo of {}.",
+    )
+    totals = {generation: 0.0 for generation in PORSCHE_GENERATION_DESCRIPTIONS}
+    for pred in predictions:
+        if pred["label"] in descriptions:
+            totals[descriptions[pred["label"]]] += float(pred["score"])
+    total = sum(totals.values())
+    if total <= 0:
+        return {generation: 0.0 for generation in totals}
+    return {generation: value / total for generation, value in totals.items()}
+
+
+def decide_porsche_generation(scores, minimum_difference=0.25):
+    """Retorna '997', '991' ou None quando o segundo estágio é ambíguo.
+
+    O limiar é heurístico e PRECISA ser avaliado com imagens separadas.
+    A escolha '997' não comprova subgeração 997.2 nem o ano 2010.
+    """
+    if not scores:
+        return None
+    older = float(scores.get("997", 0))
+    newer = float(scores.get("991", 0))
+    if older <= 0 and newer <= 0:
+        return None
+    if older - newer >= minimum_difference:
+        return "997"
+    if newer - older >= minimum_difference:
+        return "991"
+    return None
+
+
+def apply_porsche_generation_gate(slug, message, generation_scores):
+    """Impede que o 991 receba a ficha histórica 997.2 de 2010.
+
+    Somente afeta sugestões do Porsche; outros modelos não se alteram.
+    """
+    if slug != PORSCHE_SLUG:
+        return slug, message
+    generation = decide_porsche_generation(generation_scores)
+    if generation == "997":
+        return slug, (message + " Segunda análise sugere a geração 997; "
+                      "não confirma o ano nem a subgeração 997.2.")
+    if generation == "991":
+        return None, ("Porsche 911 detectado visualmente, mas a comparação "
+                      "adicional favoreceu a geração 991, fora do catálogo "
+                      "de cinco modelos. A identificação de geração é experimental.")
+    return None, ("A imagem lembra um Porsche 911, mas não foi possível "
+                  "diferenciar com segurança as gerações 997 e 991. "
+                  "A ficha técnica de 2010 não será atribuída.")
 
 
 def classify_with_alternatives(image):

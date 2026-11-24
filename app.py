@@ -11,7 +11,9 @@ import streamlit as st
 from src.database import get_all_vehicles, get_vehicle, get_vehicle_sources, init_db
 from src.preprocessing import crop_percent, estimate_color, load_image
 from src.recognition import (
-    CANDIDATES, DISTRACTOR_LABELS, classify_with_alternatives, decide_with_alternatives,
+    CANDIDATES, DISTRACTOR_LABELS, PORSCHE_SLUG,
+    apply_porsche_generation_gate, classify_porsche_generation,
+    classify_with_alternatives, decide_with_alternatives,
 )
 from src.visualization import annotate, annotate_detections
 
@@ -181,7 +183,14 @@ else:
             started = time.perf_counter()
             with st.spinner("Comparando imagem com o catálogo e as categorias de contraste..."):
                 results = classify_with_alternatives(vehicle_crop)
+                # Duas passagens independentes: a segunda só é executada
+                # quando a classe principal se parece com o Porsche cadastrado.
+                generation_scores = (
+                    classify_porsche_generation(vehicle_crop)
+                    if results and results[0]["slug"] == PORSCHE_SLUG else None
+                )
             st.session_state.autovision_result = {
+                "porsche_generation_scores": generation_scores,
                 "signature": signature,
                 "selection": selection_identity,
                 "results": results,
@@ -206,6 +215,10 @@ else:
     slug, message = decide_with_alternatives(
         results, min_score, min_margin, manual_mode=bool(saved["manual"])
     )
+    if slug == PORSCHE_SLUG:
+        slug, message = apply_porsche_generation_gate(
+            slug, message, saved.get("porsche_generation_scores")
+        )
     total = detection["time"] + saved["classification_time"]
     st.write(f"**Tempo YOLO:** {detection['time']:.2f} s · "
              f"**Tempo CLIP:** {saved['classification_time']:.2f} s · "
@@ -242,6 +255,16 @@ else:
                            "A ficha técnica é referente ao modelo cadastrado.")
     else:
         st.warning(message)
+
+    generation_scores = saved.get("porsche_generation_scores")
+    if generation_scores is not None:
+        with st.expander("Diagnóstico experimental: gerações Porsche 997 e 991"):
+            st.write(f"Compatibilidade relativa com geração 997: "
+                     f"{generation_scores['997']:.1%}")
+            st.write(f"Compatibilidade relativa com geração 991: "
+                     f"{generation_scores['991']:.1%}")
+            st.caption("Os dois valores são relativos às descrições usadas, "
+                       "não são probabilidades nem comprovam ano ou geração.")
 
     with st.expander("Opcional: melhorar a estimativa de cor com uma amostra da pintura"):
         st.caption("Escolha uma área pequena que contenha somente a pintura: porta, teto ou capô. "
