@@ -8,7 +8,7 @@ import time
 
 import streamlit as st
 
-from src.database import get_all_vehicles, get_vehicle, init_db
+from src.database import get_all_vehicles, get_vehicle, get_vehicle_sources, init_db
 from src.preprocessing import crop_percent, estimate_color, load_image
 from src.recognition import (
     CANDIDATES, DISTRACTOR_LABELS, classify_with_alternatives, decide_with_alternatives,
@@ -39,10 +39,15 @@ if pagina == "Catálogo":
             st.write(f"**Período:** {car['periodo']}")
             st.write(f"**Motorização:** {car['motorizacao']}")
             st.write(f"**Combustível:** {car['combustivel']}")
-            st.write(car['observacoes'])
-            if car["fonte_url"]:
-                st.markdown(f"[Fonte técnica / referência inicial]({car['fonte_url']})")
-    st.info("Dados 'A definir' ainda necessitam de pesquisa por ano e versão.")
+            st.write(f"**Carroceria:** {car['carroceria']}")
+            st.write(f"**Potência:** {car['potencia']}")
+            st.write(f"**Transmissão:** {car['transmissao']}")
+            st.write(f"**Tração:** {car['tracao']}")
+            st.write(f"**Observações:** {car['observacoes']}")
+            st.caption("Ficha histórica de referência; identificação visual não comprova ano, motor ou versão exatos.")
+            for fonte in get_vehicle_sources(car['slug']):
+                st.markdown(f"[Fonte: {fonte['titulo']}]({fonte['url']})")
+    st.info("As fichas representam famílias ou versões de referência; fotos não comprovam a configuração individual.")
 
 elif pagina == "Sobre o projeto":
     st.header("Objetivo e estado da Etapa 3")
@@ -221,7 +226,15 @@ else:
             st.write(f"**Período:** {vehicle['periodo']}")
             st.write(f"**Motor:** {vehicle['motorizacao']}")
             st.write(f"**Combustível:** {vehicle['combustivel']}")
+            st.write(f"**Carroceria:** {vehicle['carroceria']}")
+            st.write(f"**Potência:** {vehicle['potencia']}")
+            st.write(f"**Transmissão:** {vehicle['transmissao']}")
+            st.write(f"**Tração:** {vehicle['tracao']}")
             st.write(f"**Descrição:** {vehicle['observacoes']}")
+            st.caption("Ficha histórica de referência; a fotografia não confirma ano, motorização ou versão.")
+            with st.expander("Fontes da ficha técnica"):
+                for fonte in get_vehicle_sources(vehicle['slug']):
+                    st.markdown(f"[Fonte: {fonte['titulo']}]({fonte['url']})")
             st.info(message)
             if slug == "porsche-911-gt3-rs-2010":
                 st.caption("O CLIP não verifica o ano 2010 nem distingue com garantia "
