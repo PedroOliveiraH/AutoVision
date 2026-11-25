@@ -29,7 +29,7 @@ As imagens disponibilizadas nesta pasta não representam necessariamente o conju
 
 **Observação sobre o Mustang:** a fotografia `Ford_Mustang_I_IMG_3182.jpg` representa um Mustang de primeira geração. A página de origem não comprova que o exemplar pertença à série inicial informalmente conhecida como 1964½. Por esse motivo, a imagem não deve ser apresentada como comprovação desse ano ou dessa série específica.
 
-As páginas individuais de origem estão identificadas no arquivo `manifest.csv`.
+As páginas individuais de origem estão identificadas no arquivo `manifesto.csv`.
 
 ## 4. Fotografias complementares
 
@@ -45,7 +45,7 @@ Essas imagens permitem demonstrar situações em que o detector localiza vários
 
 ## 5. Direitos autorais e atribuição
 
-As dez imagens documentadas no `manifest.csv` foram obtidas do Wikimedia Commons. Cada fotografia permanece sujeita à licença indicada em sua página original.
+As dez imagens documentadas no `manifesto.csv` foram obtidas do Wikimedia Commons. Cada fotografia permanece sujeita à licença indicada em sua página original.
 
 Este projeto não reivindica autoria sobre as fotografias de terceiros.
 
@@ -63,7 +63,7 @@ A fotografia da garagem possui uma declaração de disponibilização em domíni
 - [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
 - [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
-O arquivo `manifest.csv` contém os nomes originais dos arquivos, a autoria informada, a página da fotografia no Wikimedia Commons e a licença correspondente.
+O arquivo `manifesto.csv` contém os nomes originais dos arquivos, a autoria informada, a página da fotografia no Wikimedia Commons e a licença correspondente.
 
 Caso uma imagem seja recortada, editada ou modificada para apresentação, a alteração deverá ser identificada nos créditos.
 
@@ -77,7 +77,7 @@ As fotografias documentadas nesta pasta não devem ser confundidas com um conjun
 
 ## 7. Registro de procedência
 
-O arquivo `manifest.csv` utiliza os campos:
+O arquivo `manifesto.csv` utiliza os campos:
 
 - `arquivo`: nome exato da fotografia.
 - `veiculo_slug`: identificador do catálogo, quando aplicável e confirmado.
