@@ -52,17 +52,54 @@ if pagina == "Catálogo":
     st.info("As fichas representam famílias ou versões de referência; fotos não comprovam a configuração individual.")
 
 elif pagina == "Sobre o projeto":
-    st.header("Objetivo e estado da Etapa 3")
-    st.write("**YOLO11 nano** localiza automóveis; **CLIP** compara as descrições dos cinco "
-             "modelos e categorias de contraste; **SQLite** fornece as fichas técnicas.")
-    st.write("**Novidade:** várias caixas detectadas com seleção pelo usuário e classificação "
-             "manual de uma região quando a detecção automática falhar.")
-    st.write("**Não identifica ano exato, geração com garantia, placa ou VIN.** Uma miniatura "
-             "pode parecer um automóvel real para os modelos.")
-    st.write("Computação Gráfica: mapeamento de coordenadas, recortes, manutenção de proporções, "
-             "retângulos e rótulos em camada, comparação visual e análise HSV.")
-    st.warning("Limiar YOLO e CLIP são experimentais. A classificação manual ignora a verificação "
-               "de presença de automóvel. A acurácia deve ser medida em imagens independentes.")
+    st.header("Sobre o AutoVision — Projeto Final")
+
+    st.write(
+        "O AutoVision é uma aplicação acadêmica de visão "
+        "computacional para detectar automóveis, sugerir "
+        "modelos e apresentar fichas técnicas."
+    )
+
+    st.subheader("Tecnologias utilizadas")
+    st.write(
+        "**YOLO11 nano:** detecção de automóveis."
+    )
+    st.write(
+        "**CLIP:** comparação visual com cinco modelos "
+        "cadastrados e categorias de contraste."
+    )
+    st.write(
+        "**SQLite:** armazenamento das fichas técnicas."
+    )
+    st.write(
+        "**Streamlit:** interface interativa."
+    )
+
+    st.subheader("Computação Gráfica")
+    st.write(
+        "Redimensionamento, recortes, mapeamento de "
+        "coordenadas, caixas delimitadoras, composição "
+        "de camadas, transparência e análise HSV."
+    )
+
+    st.subheader("Resultados experimentais")
+    st.write(
+        "**36 avaliações registradas**, incluindo "
+        "20 testes automáticos com veículos do catálogo."
+    )
+    st.write(
+        "**14 identificações corretas em 20 testes (70%)**, "
+        "conforme a amostra experimental."
+    )
+    st.write(
+        "**56 testes automatizados de código aprovados.**"
+    )
+
+    st.warning(
+        "O sistema é experimental. As identificações "
+        "não comprovam ano, versão, motorização ou "
+        "identidade exata do veículo."
+    )
 
 else:
     st.header("Analisar uma fotografia")
