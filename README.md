@@ -273,7 +273,7 @@ Foram registradas **36 avaliações**, distribuídas em quatro grupos:
 |---|---|---|
 | Identificação automática de modelos cadastrados | **14 acertos em 20 (70%)** | Seis resultados não foram conclusivos |
 | Rejeição de veículos fora do catálogo | **6 rejeições em 7 (85,7%)** | Houve uma falsa aceitação |
-| Controle negativo — imagens sem automóveis | **4 resultados adequados em 4** | Não houve atribuição indevida de um modelo |
+| Controle negativo — imagens sem carros de passeio | **4 resultados adequados em 4** | Não houve atribuição indevida de um modelo |
 | Contingência manual | **5 sugestões corretas em 5** | Resultados do CLIP sem confirmação de detecção YOLO |
 
 ### Resultados por modelo
@@ -419,7 +419,7 @@ O CLIP realiza comparação entre representações visuais e textuais; não foi 
 
 - **ChatGPT (OpenAI):** utilizado como ferramenta auxiliar no planejamento do projeto, esclarecimento de conceitos, revisão de código, análise de resultados, organização dos testes e elaboração e revisão da documentação técnica.
 
-- **Claude (Anthropic):** utilizado como ferramenta auxiliar na revisão e edição dos documentos acadêmicos, especialmente na substituição, organização e adequação das fotografias e capturas de tela do relatório técnico e dos slides de apresentação.
+Claude (Anthropic): utilizado como ferramenta auxiliar na elaboração, revisão, organização e diagramação do relatório técnico e dos slides de apresentação, incluindo ajustes de textos, gráficos, substituição de fotografias e adequação das capturas de tela. As alterações foram revisadas pela equipe para preservar a fidelidade dos resultados experimentais, a qualidade visual e os créditos das imagens utilizadas.
 
 **Revisão e validação das contribuições das ferramentas:**
 
